@@ -70,7 +70,7 @@ EXCLUDE_TESTS=github.com/OpenIMSDK/Open-IM-Server/test github.com/OpenIMSDK/Open
 # ==============================================================================
 # ❯ tree -L 1 cmd
 # cmd
-# ├── Open-IM-SDK-Core/ - main.go
+# ├── openim-sdk-core/ - main.go
 # ├── open_im_api	
 # ├── open_im_cms_api
 # ├── open_im_cron_task
@@ -110,11 +110,17 @@ go.build.%:
 	@echo "=====> PLATFORM=$(PLATFORM)"
 	@echo "=====> BIN_DIR=$(BIN_DIR)"
 	@echo "===========> Building binary $(COMMAND) $(VERSION) for $(OS)_$(ARCH)"
-	@mkdir -p $(OUTPUT_DIR)/platforms/$(OS)/$(ARCH)
-	@if [ "$(COMMAND)" == "rpc" ] || [ "$(COMMAND)" == "Open-IM-SDK-Core" ]; then \
-		echo "===========> Compilation is not yet supported $(COMMAND)"; \
+	@mkdir -p $(BIN_DIR)/platforms/$(OS)/$(ARCH)
+	@if [ "$(COMMAND)" == "openim-sdk-core" ]; then \
+		echo "===========> DEBUG: Compilation is not yet supported $(COMMAND)"; \
+	elif [ "$(COMMAND)" == "rpc" ]; then \
+		for d in $(wildcard $(ROOT_DIR)/cmd/rpc/*/); do \
+			cd $$d && CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) $(GO) build $(GO_BUILD_FLAGS) -o\
+			 $(BIN_DIR)/platforms/$(OS)/$(ARCH)/$$(basename $$d)$(GO_OUT_EXT) .; \
+		done; \
 	else \
-		CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) $(GO) build $(GO_BUILD_FLAGS) -o $(OUTPUT_DIR)/platforms/$(OS)/$(ARCH)/$(COMMAND)$(GO_OUT_EXT) $(ROOT_DIR)/cmd/$(COMMAND)/main.go; \
+		CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) $(GO) build $(GO_BUILD_FLAGS) -o \
+		$(BIN_DIR)/platforms/$(OS)/$(ARCH)/$(COMMAND)$(GO_OUT_EXT) $(ROOT_DIR)/cmd/$(COMMAND)/main.go; \
 	fi
 
 ## go.multiarch: Build multi-arch binaries
@@ -125,7 +131,7 @@ go.build.multiarch: go.build.verify $(foreach p,$(PLATFORMS),$(addprefix go.buil
 .PHONY: go.lint
 go.lint: tools.verify.golangci-lint
 	@echo "===========> Run golangci to lint source codes"
-	@$(TOOLS_DIR)/golangci-lint run -c $(ROOT_DIR)/.golangci.yml $(ROOT_DIR)/...
+	@$(BIN_DIR)/golangci-lint run -c $(ROOT_DIR)/.golangci.yml $(ROOT_DIR)/...
 
 ## go.test: Run unit test
 .PHONY: go.test
@@ -144,11 +150,11 @@ go.test:
 ## go.test.junit-report: Run unit test
 .PHONY: go.test.junit-report
 go.test.junit-report: tools.verify.go-junit-report
-	@echo "===========> Run unit test > $(OUTPUT_DIR)/report.xml"
-	@$(GO) test -v -coverprofile=$(OUTPUT_DIR)/coverage.out 2>&1 ./... | $(TOOLS_DIR)/go-junit-report -set-exit-code > $(OUTPUT_DIR)/report.xml
-	@sed -i '/mock_.*.go/d' $(OUTPUT_DIR)/coverage.out
-	@echo "===========> Test coverage of Go code is reported to $(OUTPUT_DIR)/coverage.html by generating HTML"
-	@$(GO) tool cover -html=$(OUTPUT_DIR)/coverage.out -o $(OUTPUT_DIR)/coverage.html
+	@echo "===========> Run unit test > $(TMP_DIR)/report.xml"
+	@$(GO) test -v -coverprofile=$(TMP_DIR)/coverage.out 2>&1 ./... | $(TOOLS_DIR)/go-junit-report -set-exit-code > $(OUTPUT_DIR)/report.xml
+	@sed -i '/mock_.*.go/d' $(TMP_DIR)/coverage.out
+	@echo "===========> Test coverage of Go code is reported to $(TMP_DIR)/coverage.html by generating HTML"
+	@$(GO) tool cover -html=$(TMP_DIR)/coverage.out -o $(TMP_DIR)/coverage.html
 
 ## go.test.cover: Run unit test with coverage
 .PHONY: go.test.cover
@@ -179,8 +185,8 @@ go.updates: tools.verify.go-mod-outdated
 ## go.clean: Clean all builds directories and files
 .PHONY: go.clean
 go.clean:
-	@echo "===========> Cleaning all builds OUTPUT_DIR($(OUTPUT_DIR)) AND BIN_DIR($(BIN_DIR))"
-	@-rm -vrf $(OUTPUT_DIR) $(BIN_DIR)
+	@echo "===========> Cleaning all builds TMP_DIR($(TMP_DIR)) AND BIN_DIR($(BIN_DIR))"
+	@-rm -vrf $(TMP_DIR) $(BIN_DIR)
 	@echo "===========> End clean..."
 
 ## copyright.help: Show copyright help

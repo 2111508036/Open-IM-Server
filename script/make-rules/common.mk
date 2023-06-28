@@ -48,13 +48,13 @@ endif
 
 # TOOLS_DIR: The directory where tools are stored for build and testing.
 ifeq ($(origin TOOLS_DIR),undefined)
-TOOLS_DIR := $(ROOT_DIR)/tools
+TOOLS_DIR := $(OUTPUT_DIR)/tools
 $(shell mkdir -p $(TOOLS_DIR))
 endif
 
 # TMP_DIR: directory where temporary files are stored.
 ifeq ($(origin TMP_DIR),undefined)
-TMP_DIR := $(ROOT_DIR)/tmp
+TMP_DIR := $(OUTPUT_DIR)/tmp
 $(shell mkdir -p $(TMP_DIR))
 endif
 
@@ -153,8 +153,8 @@ define MAKEFILE_EXAMPLE
 # make linux.arm64                                               imctl is compiled on arm64 platform.
 # make verify-copyright                                          Verify the license headers for all files.
 # make install-deepcopy-gen                                      Install deepcopy-gen tools if the license is missing.
-# make build BINS=imctl V=1 DEBUG=1                             Build debug binaries for only imctl.
-# make multiarch PLATFORMS="linux_arm64 linux_amd64" V=1   Build binaries for both platforms.
+# make build BINS=imctl V=1 DEBUG=1                              Build debug binaries for only imctl.
+# make multiarch PLATFORMS="linux_arm64 linux_amd64" V=1         Build binaries for both platforms.
 endef
 export MAKEFILE_EXAMPLE
 
